@@ -7,6 +7,7 @@ from agents import (
     ModelSettings,
     OpenAIResponsesModel,
     Runner,
+    function_tool,
     set_default_openai_api,
     set_tracing_disabled,
 )
@@ -18,18 +19,32 @@ from output_types import ResearchPlan
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
-# Groq Responses API (beta); override via GROQ_MODEL in .env.
 DEFAULT_GROQ_MODEL = "openai/gpt-oss-20b"
 
 instructions = """
 You are a research planning assistant.
 
 **TASK INSTRUCTIONS**
-- You will be given a research topic
-- Your task is to provide a plan on how to research this topic.
-- Output 5 concise tasks (5 words or less) to your plan.
-
+- You will be given a research topic and a list of allowed research sources.
+- Constrain your research plan only to those sources.
+- Output 5 concise tasks and specify which source is used for each task.
+- Each task description must be five words or fewer.
 """
+
+
+def research_source_names() -> list[str]:
+    return [
+        "Wikipedia",
+        "Google",
+        "Youtube",
+    ]
+
+################
+
+@function_tool
+def get_research_sources() -> list[str]:
+    """Provides a list of research sources."""
+    return research_source_names()
 
 
 def build_groq_model() -> OpenAIResponsesModel:
@@ -43,7 +58,6 @@ def build_groq_model() -> OpenAIResponsesModel:
 
     model_name = os.getenv("GROQ_MODEL", DEFAULT_GROQ_MODEL)
     client = AsyncOpenAI(base_url=GROQ_BASE_URL, api_key=api_key)
-    # Agents SDK defaults to Responses; make that explicit for Groq's /v1/responses endpoint.
     set_default_openai_api("responses")
     set_tracing_disabled(True)
     return OpenAIResponsesModel(model=model_name, openai_client=client)
@@ -55,19 +69,24 @@ def main() -> None:
         instructions=instructions,
         model=build_groq_model(),
         output_type=ResearchPlan,
+        # Groq Responses API: structured output cannot be combined with tools.
         model_settings=ModelSettings(
             temperature=1.0,
             top_p=1.0,
-            # Reasoning models need headroom; 150 triggers response.incomplete (max_output_tokens).
-            max_tokens=1024,
+            max_tokens=2048,
         ),
     )
 
-    user_input = "learn about AI agents"
+    topic = "learn about AI agents"
+    sources = research_source_names()
+    user_input = (
+        f"Research topic: {topic}\n"
+        f"Available research sources: {', '.join(sources)}"
+    )
     result = Runner.run_sync(agent, user_input)
     plan = result.final_output_as(ResearchPlan)
-    for index, task in enumerate(plan.tasks, start=1):
-        print(f"{index}. {task}")
+    for task in plan.tasks:
+        print(f"{task.step}. [{task.research_source}] {task.description}")
 
 
 if __name__ == "__main__":
