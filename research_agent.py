@@ -13,6 +13,8 @@ from agents import (
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
 
+from output_types import ResearchPlan
+
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
@@ -52,6 +54,7 @@ def main() -> None:
         name="Research Planner",
         instructions=instructions,
         model=build_groq_model(),
+        output_type=ResearchPlan,
         model_settings=ModelSettings(
             temperature=1.0,
             top_p=1.0,
@@ -62,7 +65,9 @@ def main() -> None:
 
     user_input = "learn about AI agents"
     result = Runner.run_sync(agent, user_input)
-    print(result.final_output)
+    plan = result.final_output_as(ResearchPlan)
+    for index, task in enumerate(plan.tasks, start=1):
+        print(f"{index}. {task}")
 
 
 if __name__ == "__main__":
