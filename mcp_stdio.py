@@ -1,3 +1,4 @@
+# mcp server client (using sse)
 """Run an agent against the FastMCP server in research_mcp_server.py over SSE."""
 
 import asyncio
@@ -47,7 +48,7 @@ async def wait_for_sse_server(url: str, *, timeout_seconds: float = 30) -> None:
     print(f"SSE server did not become ready at {url}", file=sys.stderr)
     sys.exit(1)
 
-
+# starting the server
 @contextlib.asynccontextmanager
 async def sse_server_process():
     process = await asyncio.create_subprocess_exec(
@@ -78,12 +79,14 @@ async def sse_server_process():
 
 async def main() -> None:
     async with sse_server_process():
+        # connecting with the server
         async with MCPServerSse(
             name="Research Tools",
             params=SSE_PARAMS,
             cache_tools_list=True,
             client_session_timeout_seconds=60,
         ) as research_server:
+        #building agent
             agent = Agent(
                 name="Assistant",
                 instructions=(

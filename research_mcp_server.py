@@ -1,3 +1,4 @@
+# fastmcp app for mcp server(tool provider for agent)
 from fastmcp import FastMCP
 
 mcp = FastMCP("Research Tools")
