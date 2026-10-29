@@ -28,3 +28,15 @@ class ResearchPlan(BaseModel):
         max_length=5,
         description="Five numbered tasks using only allowed research sources.",
     )
+
+
+class ResearchOutputModel(BaseModel):
+    """Output model for the research agent."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    research_plan: str = Field(..., description="The final research plan as text.")
+    research_plan_file: str = Field(
+        ...,
+        description="The path to the research plan file.",
+    )
