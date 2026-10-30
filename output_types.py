@@ -40,3 +40,40 @@ class ResearchOutputModel(BaseModel):
         ...,
         description="The path to the research plan file.",
     )
+    is_sufficiently_detailed: bool = Field(
+        ...,
+        description=(
+            "True if the plan is at least 100 characters and includes "
+            "actionable research steps."
+        ),
+    )
+
+
+class ResearchInputModel(BaseModel):
+    """Structured result from the input guardrail agent."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    research_validation: str = Field(
+        ...,
+        description="Short explanation of the validation result.",
+    )
+    is_research_forbidden: bool = Field(
+        ...,
+        description="True if the request targets a forbidden research topic.",
+    )
+
+
+class ResearchOutputValidationModel(BaseModel):
+    """Structured result from the output guardrail agent."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    output_validation: str = Field(
+        ...,
+        description="Short explanation of the output validation result.",
+    )
+    is_output_insufficient: bool = Field(
+        ...,
+        description="True if the research plan fails quality checks.",
+    )
